@@ -179,7 +179,7 @@ export class HRChart {
     const { ctx, w, h } = setupCanvas(this.canvas);
     const sx = (v) => PAD.l + ((v - this.xr[0]) / (this.xr[1] - this.xr[0])) * (w - PAD.l - PAD.r);
     const sy = (v) => h - PAD.b - ((v - this.yr[0]) / (this.yr[1] - this.yr[0])) * (h - PAD.t - PAD.b);
-    axes(ctx, w, h, sx, sy, [4.4, 4.2, 4.0, 3.8, 3.6], [-4, -2, 0, 2], (v) => `${Math.round(Math.pow(10, v) / 100) * 100}`, (v) => `${v}`);
+    axes(ctx, w, h, sx, sy, [20000, 10000, 6000, 4000].map(Math.log10), [-4, -2, 0, 2], (v) => `${Math.round(Math.pow(10, v)).toLocaleString('en')}`, (v) => `${v}`);
     if (!snap) return;
     const cols = [css('--p1'), css('--p2')];
     let near = null, nd = 64;
