@@ -1,0 +1,353 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>globsim</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=UnifrakturMaguntia&display=swap">
+<style>
+/* Layout: an observatory screen. The cluster fills the left; an instrument
+   rail on the right holds the knobs and the diagnostics from the paper. */
+:root {
+  color-scheme: dark;
+  --bg: #08070c;
+  --sky: #0c0a12;
+  --panel: #110f17;
+  --line: #262331;
+  --grid: #1f1c28;
+  --ink: #ebe8f2;
+  --muted: #9a96a8;
+  --accent: #e7dcc6;
+  --p1: #d95926;
+  --p2: #3987e5;
+  --font-display: "UnifrakturMaguntia", "Old English Text MT", Georgia, serif;
+  --font-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-data: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --step--1: 0.75rem;
+  --step-0: 0.875rem;
+  --step-1: 1rem;
+  --step-3: 2.25rem;
+}
+[hidden] { display: none !important; }
+html, body { height: 100%; }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font: 400 var(--step-0)/1.5 var(--font-body);
+  display: flex;
+  flex-direction: column;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  box-sizing: border-box;
+}
+*, *::before, *::after { box-sizing: inherit; }
+a { color: var(--accent); text-underline-offset: 3px; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.bar {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 4px 20px;
+  padding-block: 10px 8px;
+  border-bottom: 1px solid var(--line);
+}
+.wordmark {
+  font: 400 2rem/1 var(--font-display);
+  margin: 0;
+  letter-spacing: 0.01em;
+}
+.tag { margin: 0; color: var(--muted); flex: 1 1 22rem; min-width: 0; }
+.cite { font: 400 var(--step--1) var(--font-data); }
+
+.app {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 400px;
+  gap: 16px;
+  padding-block: 16px;
+}
+.sky {
+  position: relative;
+  min-height: 0;
+  border-radius: 6px;
+  overflow: hidden;
+  background: radial-gradient(ellipse at 50% 45%, #15111f 0%, var(--sky) 55%, var(--bg) 100%);
+  border: 1px solid var(--line);
+}
+#sky { position: absolute; inset: 0; width: 100%; height: 100%; touch-action: none; cursor: grab; }
+#sky:active { cursor: grabbing; }
+
+.hud {
+  position: absolute;
+  top: 14px;
+  left: 16px;
+  pointer-events: none;
+  font-family: var(--font-data);
+  font-variant-numeric: tabular-nums;
+}
+.clock { font-size: var(--step-3); line-height: 1; font-weight: 500; }
+.clock small { font-size: var(--step-1); color: var(--muted); margin-left: 6px; }
+.hud dl {
+  display: grid;
+  grid-template-columns: auto auto;
+  gap: 2px 14px;
+  margin: 10px 0 0;
+  font-size: var(--step--1);
+}
+.hud dt { color: var(--muted); }
+.hud dd { margin: 0; }
+.hud .k1 { color: var(--p1); }
+.hud .k2 { color: var(--p2); }
+
+.legend {
+  position: absolute;
+  left: 16px;
+  bottom: 14px;
+  display: flex;
+  gap: 14px;
+  font-size: var(--step--1);
+  color: var(--muted);
+  pointer-events: none;
+}
+.dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--c); margin-right: 6px; box-shadow: 0 0 8px var(--c); }
+
+.transport {
+  position: absolute;
+  right: 14px;
+  bottom: 12px;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.rate { font: 400 var(--step--1) var(--font-data); color: var(--muted); margin-right: 4px; font-variant-numeric: tabular-nums; }
+
+button, select {
+  font: 500 var(--step--1)/1 var(--font-body);
+  color: var(--ink);
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 8px 12px;
+  cursor: pointer;
+}
+button:hover, select:hover { border-color: var(--muted); }
+button.primary { background: var(--accent); color: var(--bg); border-color: var(--accent); }
+.seg { display: inline-flex; }
+.seg button { border-radius: 0; }
+.seg button:first-child { border-radius: 4px 0 0 4px; }
+.seg button:last-child { border-radius: 0 4px 4px 0; border-left: 0; }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+
+.panel {
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding-right: 4px;
+}
+.sym { text-transform: none; letter-spacing: 0; font-size: var(--step-0); }
+.panel h2 {
+  font: 600 var(--step--1)/1.2 var(--font-body);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  margin: 0 0 8px;
+}
+.controls { display: grid; gap: 12px; }
+.row { display: grid; grid-template-columns: 7.5rem minmax(0, 1fr) auto; gap: 10px; align-items: center; }
+.row label, .row .lbl { color: var(--muted); font-size: var(--step--1); }
+.row output { font: 400 var(--step--1) var(--font-data); font-variant-numeric: tabular-nums; min-width: 4.2rem; text-align: right; }
+.row select, .row .seg { grid-column: 2 / 4; justify-self: start; }
+.note { grid-column: 2 / 4; margin: -6px 0 0; font-size: var(--step--1); color: var(--muted); }
+.checks { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: var(--step--1); color: var(--muted); }
+.checks label { display: inline-flex; gap: 6px; align-items: center; cursor: pointer; }
+input[type="range"] { width: 100%; accent-color: var(--accent); }
+input[type="checkbox"] { accent-color: var(--accent); }
+
+.chart { position: relative; }
+.chart canvas { width: 100%; height: 170px; display: block; }
+#hr-chart { height: 230px; }
+.chart p { margin: 6px 0 0; font-size: var(--step--1); color: var(--muted); max-width: 60ch; }
+.keys { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: var(--step--1); color: var(--muted); margin-bottom: 6px; }
+.sw { display: inline-block; width: 16px; height: 0; border-top: 2px solid var(--c); vertical-align: middle; margin-right: 6px; }
+.sw.dash { border-top-style: dashed; }
+.axis-x { font: 400 0.6875rem var(--font-data); color: var(--muted); text-align: right; margin-top: 2px; }
+
+.tip {
+  position: absolute;
+  pointer-events: none;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 6px 8px;
+  font-size: var(--step--1);
+  min-width: 10rem;
+  z-index: 2;
+  box-shadow: 0 6px 20px rgb(0 0 0 / 0.5);
+}
+.tt-head { color: var(--muted); font-family: var(--font-data); margin-bottom: 2px; }
+.tt-row { display: flex; align-items: center; gap: 4px; }
+.tt-row b { margin-left: auto; padding-left: 12px; font: 500 var(--step--1) var(--font-data); font-variant-numeric: tabular-nums; }
+
+.notes { font-size: var(--step--1); color: var(--muted); border-top: 1px solid var(--line); padding-top: 12px; }
+.notes p { margin: 0 0 8px; max-width: 62ch; }
+.notice { font-size: var(--step--1); color: var(--accent); border: 1px solid var(--line); border-radius: 4px; padding: 8px 10px; margin: 0; }
+
+@media (max-width: 860px) {
+  html, body { height: auto; }
+  .app { grid-template-columns: minmax(0, 1fr); }
+  .sky { height: 62vh; min-height: 340px; }
+  .panel { overflow: visible; padding-right: 0; }
+  .legend { bottom: 56px; }
+  .rate { display: none; }
+}
+</style>
+</head>
+<body>
+<header class="bar">
+  <h1 class="wordmark">globsim</h1>
+  <p class="tag">A globular cluster with a normal-helium and a helium-rich population, evolving for 12 Gyr. After Fare, Webb &amp; Sills (2018).</p>
+  <a class="cite" href="https://arxiv.org/abs/1809.01055" target="_blank" rel="noopener">MNRAS 481, 3027</a>
+</header>
+
+<main class="app">
+  <section class="sky" aria-label="Cluster view">
+    <canvas id="sky"></canvas>
+    <div class="hud" aria-live="off">
+      <div class="clock"><span id="time">0.00</span><small>Gyr</small></div>
+      <dl>
+        <dt>Relaxation times</dt><dd id="trh">0.0</dd>
+        <dt>Members</dt><dd id="members">–</dd>
+        <dt>Mass</dt><dd id="mass">–</dd>
+        <dt class="k1">P1 turnoff</dt><dd id="to1">–</dd>
+        <dt class="k2">P2 turnoff</dt><dd id="to2">–</dd>
+        <dt>r<sub>h</sub> P1 / P2</dt><dd id="rhs">–</dd>
+        <dt>Tidal radius</dt><dd id="rt">–</dd>
+      </dl>
+    </div>
+    <div class="legend" id="legend-pop">
+      <span><i class="dot" style="--c: var(--p1)"></i>P1 · normal helium</span>
+      <span><i class="dot" style="--c: var(--p2)"></i>P2 · helium-rich</span>
+    </div>
+    <div class="transport">
+      <span class="rate" id="rate">–</span>
+      <button id="restart" type="button">Restart</button>
+      <button id="play" type="button" class="primary" aria-pressed="false">Pause</button>
+    </div>
+  </section>
+
+  <aside class="panel">
+    <p class="notice" id="notice" hidden></p>
+    <section class="controls" aria-label="Cluster setup">
+      <h2>Setup</h2>
+      <div class="row">
+        <label for="preset">Scenario</label>
+        <select id="preset">
+          <option value="fig3">Isolated cluster (paper fig. 3)</option>
+          <option value="fig4">20 kpc orbit (paper fig. 4)</option>
+          <option value="fig6">Born mixed, 20 kpc (paper fig. 6)</option>
+          <option value="extreme">Extreme helium, Y = 0.40</option>
+          <option value="custom" disabled>Custom</option>
+        </select>
+      </div>
+      <div class="row">
+        <label for="yp2">P2 helium Y</label>
+        <input id="yp2" type="range" min="0.240" max="0.400" step="0.005" value="0.32">
+        <output id="yp2-out" for="yp2">0.320</output>
+        <p class="note" id="yp2-note"></p>
+      </div>
+      <div class="row">
+        <label for="scale">P2 half-mass radius</label>
+        <input id="scale" type="range" min="0.25" max="1" step="0.05" value="0.5">
+        <output id="scale-out" for="scale">2.5 pc</output>
+      </div>
+      <div class="row">
+        <span class="lbl">Environment</span>
+        <span class="seg" role="group" aria-label="Environment">
+          <button id="env-iso" type="button" aria-pressed="true">Isolated</button>
+          <button id="env-orbit" type="button" aria-pressed="false">Milky Way orbit</button>
+        </span>
+      </div>
+      <div class="row" id="rg-row" hidden>
+        <label for="rg">Orbit radius</label>
+        <input id="rg" type="range" min="4" max="40" step="1" value="20">
+        <output id="rg-out" for="rg">20 kpc</output>
+      </div>
+      <div class="row">
+        <label for="n">Particles</label>
+        <select id="n">
+          <option value="1000">1 000 (fast)</option>
+          <option value="2000">2 000</option>
+          <option value="3000">3 000</option>
+          <option value="4000">4 000 (slow)</option>
+        </select>
+      </div>
+      <div class="checks">
+        <label><input id="twin" type="checkbox" checked> Twin run with P2 at normal helium</label>
+        <label><input id="bh" type="checkbox"> Keep black holes</label>
+        <label><input id="spin" type="checkbox" checked> Rotate view</label>
+      </div>
+      <div class="row">
+        <label for="color">Colour stars by</label>
+        <select id="color">
+          <option value="population">Population</option>
+          <option value="temperature">Temperature</option>
+        </select>
+      </div>
+      <div class="row">
+        <span class="lbl">Random seed</span>
+        <button id="seed" type="button">New initial conditions</button>
+      </div>
+    </section>
+
+    <section class="chart">
+      <h2>Half-mass radius, pc</h2>
+      <div class="keys">
+        <span><i class="sw" style="--c: var(--p1)"></i>P1</span>
+        <span><i class="sw" style="--c: var(--p2)"></i>P2</span>
+        <span><i class="sw" style="--c: var(--ink)"></i>All stars</span>
+        <span><i class="sw dash" style="--c: var(--muted)"></i>Twin, P2 normal helium</span>
+      </div>
+      <canvas id="rh-chart" aria-label="Half-mass radius against time"></canvas>
+      <div class="axis-x">time, Gyr</div>
+      <div class="tip" id="rh-tip" hidden></div>
+      <p>In the paper, P1 ends up smaller when P2 is helium-rich (solid below dashed). P2's massive stars die sooner, so P1's heaviest stars segregate to the centre unopposed.</p>
+    </section>
+
+    <section class="chart">
+      <h2>Mass segregation, <span class="sym">δα</span></h2>
+      <div class="keys">
+        <span><i class="sw" style="--c: var(--p1)"></i>P1</span>
+        <span><i class="sw" style="--c: var(--p2)"></i>P2</span>
+        <span><i class="sw dash" style="--c: var(--muted)"></i>Twin</span>
+      </div>
+      <canvas id="da-chart" aria-label="Mass segregation against time"></canvas>
+      <div class="axis-x">time, Gyr</div>
+      <div class="tip" id="da-tip" hidden></div>
+      <p>dα / d ln(r / r<sub>m</sub>) for main-sequence stars of 0.3–0.8 M☉ (Webb &amp; Vesperini 2016). Lower values mean stronger segregation. The curve is a running mean.</p>
+    </section>
+
+    <section class="chart">
+      <h2>HR diagram, now</h2>
+      <canvas id="hr-chart" aria-label="Hertzsprung-Russell diagram"></canvas>
+      <div class="axis-x">T<sub>eff</sub>, K · y-axis log L/L☉</div>
+      <div class="tip" id="hr-tip" hidden></div>
+      <p>Only the main-sequence lifetime depends on helium, as in NBODY6MP, so P2 shows its own fainter turnoff and a bluer horizontal branch.</p>
+    </section>
+
+    <section class="notes">
+      <h2>How it works</h2>
+      <p>Direct N-body with Plummer softening and a leapfrog integrator. The force sum runs on the GPU. Initial conditions follow the paper: P1 is a King W<sub>0</sub> = 7 model with r<sub>h</sub> = 5 pc, P2 is the same model shrunk, the masses come from a Kroupa IMF over 0.1–50 M☉, and Z = 0.0001.</p>
+      <p>A few thousand particles stand in for 40 000 stars. Time is scaled by the half-mass relaxation time, so relaxation and stellar evolution keep their real ratio. The Galactic tide is a circular orbit in a flat 220 km/s rotation curve, scaled to keep r<sub>t</sub>/r<sub>h</sub>. Neutron stars always leave on natal kicks.</p>
+    </section>
+  </aside>
+</main>
+<script type="module" src="src/main.js"></script>
+</body>
+</html>
