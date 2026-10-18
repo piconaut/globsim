@@ -27,6 +27,8 @@ const state = {
   twin: true,
   playing: true,
   runs: [],
+  speed: 100, // target Myr per second; Infinity runs as fast as the device allows
+  clockMyr: 0,
 };
 
 const series = (get) => [
@@ -62,6 +64,7 @@ function restart() {
   rhChart.reset();
   daChart.reset();
   state.done = false;
+  state.clockMyr = 0;
   updateLabels();
   syncReadouts();
 }
@@ -114,6 +117,20 @@ $('bh').addEventListener('change', (e) => setParams({ retainBH: e.target.checked
 $('twin').addEventListener('change', (e) => { state.twin = e.target.checked; restart(); });
 $('seed').addEventListener('click', () => setParams({ seed: (Math.random() * 1e9) | 0 }));
 $('restart').addEventListener('click', restart);
+
+// Speed slider: log scale from 2 to 1000 Myr/s, with the top notch meaning "as fast as possible".
+const SPEED_MAX = 100;
+const speedFromSlider = (v) => (v >= SPEED_MAX ? Infinity : Math.round(2 * Math.pow(500, v / (SPEED_MAX - 1))));
+const sliderFromSpeed = (myr) => Math.round((Math.log(myr / 2) / Math.log(500)) * (SPEED_MAX - 1));
+function showSpeed() {
+  $('speed-out').textContent = Number.isFinite(state.speed) ? `${state.speed} Myr/s` : 'Max';
+}
+$('speed').value = sliderFromSpeed(state.speed);
+showSpeed();
+$('speed').addEventListener('input', (e) => {
+  state.speed = speedFromSlider(+e.target.value);
+  showSpeed();
+});
 $('play').addEventListener('click', () => {
   state.playing = !state.playing;
   $('play').textContent = state.playing ? 'Pause' : 'Play';
@@ -177,12 +194,21 @@ function frame(now) {
   lastFrame = now;
   const runs = state.runs;
   if (state.playing && !state.done) {
+    // Every run chases one shared clock, so the twin stays in step with the main run.
+    // The clock may lead the slowest run by at most half a second, so a slow
+    // device falls behind the target rather than lurching to catch up.
+    const endMyr = T_END_GYR * 1000;
+    const target = state.speed;
+    const slowest = Math.min(...runs.map((r) => r.sim.tMyr));
+    state.clockMyr = Number.isFinite(target)
+      ? Math.min(endMyr, state.clockMyr + target * dtSec, slowest + target * 0.5)
+      : endMyr;
     const share = 24 / runs.length;
     for (const run of runs) {
       const start = performance.now();
-      while (performance.now() - start < share && run.sim.tMyr < T_END_GYR * 1000) {
+      while (performance.now() - start < share && run.sim.tMyr < state.clockMyr) {
         const t0 = performance.now();
-        const pt = advance(run.sim, run.gpu, run.batch);
+        const pt = advance(run.sim, run.gpu, run.batch, state.clockMyr);
         const took = performance.now() - t0;
         // Keep each batch to a few ms so the page stays responsive.
         run.batch = Math.max(4, Math.min(4000, Math.round(run.batch * (took < 4 ? 1.25 : took > 9 ? 0.7 : 1))));
@@ -202,7 +228,9 @@ function frame(now) {
     const rate = ((simMyr - simMyrAtLast) / (now - lastSlow)) * 1000;
     simMyrAtLast = simMyr;
     lastSlow = now;
-    $('rate').textContent = state.playing && rate > 0 ? `${Math.round(rate)} Myr/s` : 'paused';
+    const behind = Number.isFinite(state.speed) && rate < 0.8 * state.speed;
+    $('rate').textContent = !state.playing || state.done ? 'paused'
+      : behind || !Number.isFinite(state.speed) ? `running at ${Math.round(rate)} Myr/s` : '';
     rhChart.draw();
     daChart.draw();
     hrChart.draw(snap, snap?.mass);
