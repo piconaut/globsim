@@ -65,6 +65,7 @@ function restart() {
   daChart.reset();
   state.done = false;
   state.clockMyr = 0;
+  if (renderer) renderer.focus = null;
   updateLabels();
   syncReadouts();
 }
