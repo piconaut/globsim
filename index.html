@@ -125,6 +125,9 @@ a { color: var(--accent); text-underline-offset: 3px; }
   align-items: center;
 }
 .rate { font: 400 var(--step--1) var(--font-data); color: var(--muted); margin-right: 4px; font-variant-numeric: tabular-nums; }
+.speed { display: inline-flex; align-items: center; gap: 8px; font-size: var(--step--1); color: var(--muted); margin-right: 6px; }
+.speed input { width: 120px; }
+.speed output { font: 400 var(--step--1) var(--font-data); color: var(--ink); font-variant-numeric: tabular-nums; min-width: 5.5rem; }
 
 button, select {
   font: 500 var(--step--1)/1 var(--font-body);
@@ -204,8 +207,10 @@ input[type="checkbox"] { accent-color: var(--accent); }
   .app { grid-template-columns: minmax(0, 1fr); }
   .sky { height: 62vh; min-height: 340px; }
   .panel { overflow: visible; padding-right: 0; }
-  .legend { bottom: 56px; }
+  .legend { bottom: 96px; }
   .rate { display: none; }
+  .transport { left: 14px; flex-wrap: wrap; justify-content: flex-end; }
+  .speed input { width: 96px; }
 }
 </style>
 </head>
@@ -236,7 +241,11 @@ input[type="checkbox"] { accent-color: var(--accent); }
       <span><i class="dot" style="--c: var(--p2)"></i>P2 · helium-rich</span>
     </div>
     <div class="transport">
-      <span class="rate" id="rate">–</span>
+      <span class="rate" id="rate"></span>
+      <label class="speed" for="speed">Speed
+        <input id="speed" type="range" min="0" max="100" step="1" value="62">
+        <output id="speed-out" for="speed">100 Myr/s</output>
+      </label>
       <button id="restart" type="button">Restart</button>
       <button id="play" type="button" class="primary" aria-pressed="false">Pause</button>
     </div>

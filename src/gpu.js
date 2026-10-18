@@ -213,12 +213,13 @@ export class GpuIntegrator {
   }
 }
 
-// Advance a simulation by up to `maxSteps`, stopping at its next bookkeeping tick.
-// Returns the diagnostics point if a tick happened.
-export function advance(sim, gpu, maxSteps) {
+// Advance a simulation by up to `maxSteps`, stopping at its next bookkeeping
+// tick or once it reaches `untilMyr`. Returns the diagnostics point if a tick happened.
+export function advance(sim, gpu, maxSteps, untilMyr = Infinity) {
   const dt = sim.chooseDt();
-  const toTick = Math.max(1, Math.ceil((sim.nextStats - sim.t) / dt));
-  const steps = Math.max(1, Math.min(maxSteps, toTick));
+  const toTick = Math.ceil((sim.nextStats - sim.t) / dt);
+  const toGoal = Math.ceil((untilMyr / sim.myrPerUnit - sim.t) / dt);
+  const steps = Math.max(1, Math.min(maxSteps, toTick, toGoal));
   if (gpu) gpu.run(steps, dt);
   else {
     sim.dt = dt;
