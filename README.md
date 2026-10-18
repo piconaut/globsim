@@ -61,6 +61,27 @@ The costs of the scaling:
 
 Expect the trends from the paper, not its numbers.
 
+### How it compares with the paper
+
+An ensemble of 8 seeds at N = 1000 in isolation (CPU, Node), with P2 at
+Y = 0.32 and each run paired with a normal-helium twin. The table gives the
+mean ratio of half-mass radii (helium-rich run over twin) ± the standard error,
+averaged over ±0.5 Gyr:
+
+| t (Gyr) | whole cluster | P1 | P2 |
+|---|---|---|---|
+| 2 | 0.976 ± 0.013 | 0.998 ± 0.010 | 0.948 ± 0.022 |
+| 6 | 0.997 ± 0.029 | 1.019 ± 0.040 | 0.965 ± 0.037 |
+| 10 | 0.979 ± 0.036 | 1.036 ± 0.041 | 0.939 ± 0.038 |
+
+The cluster with a helium-rich P2 comes out slightly smaller, as in the paper,
+but only at about 2σ. The mean main-sequence mass of P2 ends up about
+0.009 M☉ below P1's (paper: about 0.01 M☉). Unlike the paper, the shrinkage
+shows up in P2 rather than P1. P1 is consistent with no change. The likely
+causes are the small N and the compressed early mass loss. The turnoff-mass
+gap is also smaller than in the paper: 0.05 M☉ at ΔY = 0.08, against 0.15 M☉,
+because the lifetime fit here is steeper in mass than SSE's.
+
 ### Differences from the paper
 
 - The paper used NBODY6 with SSE and the Miholics et al. (2015) Milky Way
