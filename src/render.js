@@ -2,6 +2,8 @@
 
 import { KIND } from './physics/stellar.js';
 
+const REF_DIST = 34;
+
 const VS = `#version 300 es
 in vec3 aPos;
 in vec4 aCol;
@@ -13,7 +15,9 @@ out vec4 vCol;
 void main() {
   vec4 p = uView * vec4(aPos, 1.0);
   gl_Position = uProj * p;
-  gl_PointSize = clamp(aSize * uScale / -p.z, 1.0, 48.0);
+  // Shrink with distance more gently than true perspective (power 0.55, not 1),
+  // so stars stay visible when zoomed out. Unchanged at the default distance.
+  gl_PointSize = clamp(aSize * uScale * pow(${REF_DIST.toFixed(1)} / -p.z, 0.55), 1.5, 48.0);
   vCol = aCol;
 }`;
 
@@ -130,7 +134,7 @@ export class Renderer {
     this.data = new Float32Array(0);
     this.yaw = 0.6;
     this.pitch = 1.05;
-    this.dist = 34;
+    this.dist = REF_DIST;
     this.colorMode = 'population';
     this.autoRotate = true;
   }
@@ -204,7 +208,7 @@ export class Renderer {
     gl.useProgram(this.prog);
     gl.uniformMatrix4fv(gl.getUniformLocation(this.prog, 'uView'), false, view);
     gl.uniformMatrix4fv(gl.getUniformLocation(this.prog, 'uProj'), false, proj);
-    gl.uniform1f(gl.getUniformLocation(this.prog, 'uScale'), this.dpr * 60);
+    gl.uniform1f(gl.getUniformLocation(this.prog, 'uScale'), this.dpr * 60 / REF_DIST);
     gl.bindVertexArray(this.vao);
     gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
     gl.bufferData(gl.ARRAY_BUFFER, d.subarray(0, n * 8), gl.DYNAMIC_DRAW);
