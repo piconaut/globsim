@@ -1,7 +1,7 @@
 import { Simulation, DEFAULTS } from './physics/sim.js';
 import { heliumLifetimeRatio, defaultHelium } from './physics/stellar.js';
 import { GpuIntegrator, gpuSupported, advance } from './gpu.js';
-import { Renderer } from './render.js';
+import { Renderer, CONTRAST_STOPS } from './render.js';
 import { TimeChart, HRChart } from './charts.js';
 
 const T_END_GYR = 12;
@@ -140,7 +140,10 @@ $('play').addEventListener('click', () => {
 $('color').addEventListener('change', (e) => {
   if (renderer) renderer.colorMode = e.target.value;
   $('legend-pop').hidden = e.target.value !== 'population';
+  $('legend-temp').hidden = e.target.value !== 'contrast';
 });
+$('ramp').style.background = `linear-gradient(90deg, ${CONTRAST_STOPS
+  .map(([f, c]) => `rgb(${c.map((v) => Math.round(v * 255)).join(' ')}) ${f * 100}%`).join(', ')})`;
 
 // Orbit and zoom the camera.
 let drag = null;
