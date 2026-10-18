@@ -303,7 +303,7 @@ export class Simulation {
     };
   }
 
-  // Positions relative to the density centre, in pc, plus photometry.
+  // Positions in pc in the simulation frame, the density centre, and photometry.
   snapshot() {
     const n = this.n;
     const pos = new Float32Array(3 * n);
@@ -313,16 +313,16 @@ export class Simulation {
     const [cx, cy, cz] = this.center;
     const s = this.pcPerUnit;
     for (let i = 0; i < n; i++) {
-      pos[3 * i] = (this.x[i] - cx) * s;
-      pos[3 * i + 1] = (this.y[i] - cy) * s;
-      pos[3 * i + 2] = (this.z[i] - cz) * s;
+      pos[3 * i] = this.x[i] * s;
+      pos[3 * i + 1] = this.y[i] * s;
+      pos[3 * i + 2] = this.z[i] * s;
       meta[2 * i] = this.pop[i];
       meta[2 * i + 1] = this.kind[i];
       const ph = photometry(this.m0[i], this.mass[i], this.kind[i], this.phase[i]);
       phot[2 * i] = ph.logL;
       phot[2 * i + 1] = ph.logT;
     }
-    return { n, pos, meta, phot, mass, tGyr: this.tMyr / 1000, rt: this.omega2 ? this.tidalRadius() * s : null };
+    return { n, pos, meta, phot, mass, center: [cx * s, cy * s, cz * s], tGyr: this.tMyr / 1000, rt: this.omega2 ? this.tidalRadius() * s : null };
   }
 
   // Total energy, including the tidal (Jacobi) term. For tests.

@@ -150,6 +150,14 @@ export class Renderer {
     const { gl } = this;
     this.resize();
     if (this.autoRotate) this.yaw += dtSec * 0.05;
+    // The density centre is re-measured every ~10 Myr and is noisy, so the
+    // camera eases toward it instead of jumping with each measurement.
+    if (snap) {
+      if (!this.focus) this.focus = snap.center.slice();
+      const k = 1 - Math.exp(-dtSec / 1.5);
+      for (let a = 0; a < 3; a++) this.focus[a] += (snap.center[a] - this.focus[a]) * k;
+    }
+    const [fx, fy, fz] = this.focus ?? [0, 0, 0];
     const n = snap ? snap.n : 0;
     if (this.data.length < n * 8) this.data = new Float32Array(n * 8);
     const d = this.data;
@@ -166,7 +174,7 @@ export class Renderer {
       if (kind === KIND.WD) { a *= 0.6; size = 1.1; }
       if (kind === KIND.BH) { col = [0.55, 0.45, 0.8]; a = 0.9; size = 3; }
       const o = 8 * i;
-      d[o] = snap.pos[3 * i]; d[o + 1] = snap.pos[3 * i + 1]; d[o + 2] = snap.pos[3 * i + 2];
+      d[o] = snap.pos[3 * i] - fx; d[o + 1] = snap.pos[3 * i + 1] - fy; d[o + 2] = snap.pos[3 * i + 2] - fz;
       d[o + 3] = col[0]; d[o + 4] = col[1]; d[o + 5] = col[2]; d[o + 6] = a;
       d[o + 7] = size;
     }
@@ -182,7 +190,9 @@ export class Renderer {
     if (snap && snap.rt) {
       gl.useProgram(this.ringProg);
       const ringView = view.slice();
-      // Scale the unit ring to r_t by scaling the model part of the view matrix.
+      // Centre the unit ring on the cluster, then scale it to r_t.
+      const t = [snap.center[0] - fx, snap.center[1] - fy, snap.center[2] - fz];
+      for (let r = 0; r < 3; r++) ringView[12 + r] += view[r] * t[0] + view[4 + r] * t[1] + view[8 + r] * t[2];
       for (let k = 0; k < 12; k++) if (k % 4 !== 3) ringView[k] *= snap.rt;
       gl.uniformMatrix4fv(gl.getUniformLocation(this.ringProg, 'uView'), false, ringView);
       gl.uniformMatrix4fv(gl.getUniformLocation(this.ringProg, 'uProj'), false, proj);
