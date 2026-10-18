@@ -114,7 +114,6 @@ a { color: var(--accent); text-underline-offset: 3px; }
   color: var(--muted);
   pointer-events: none;
 }
-.ramp { display: inline-block; width: 120px; height: 8px; border-radius: 4px; align-self: center; }
 .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--c); margin-right: 6px; box-shadow: 0 0 8px var(--c); }
 
 .transport {
@@ -241,9 +240,6 @@ input[type="checkbox"] { accent-color: var(--accent); }
       <span><i class="dot" style="--c: var(--p1)"></i>P1 · normal helium</span>
       <span><i class="dot" style="--c: var(--p2)"></i>P2 · helium-rich</span>
     </div>
-    <div class="legend" id="legend-temp" hidden>
-      <span>2 500 K</span><i class="ramp" id="ramp"></i><span>12 600 K</span>
-    </div>
     <div class="transport">
       <span class="rate" id="rate"></span>
       <label class="speed" for="speed">Speed
@@ -311,7 +307,6 @@ input[type="checkbox"] { accent-color: var(--accent); }
         <select id="color">
           <option value="population">Population</option>
           <option value="temperature">Temperature</option>
-          <option value="contrast">Temperature, exaggerated</option>
         </select>
       </div>
       <div class="row">

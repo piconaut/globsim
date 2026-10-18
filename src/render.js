@@ -24,7 +24,6 @@ void main() {
 const FS = `#version 300 es
 precision mediump float;
 in vec4 vCol;
-uniform float uCore;
 out vec4 outColor;
 void main() {
   vec2 d = gl_PointCoord * 2.0 - 1.0;
@@ -32,7 +31,7 @@ void main() {
   if (r2 > 1.0) discard;
   float glow = exp(-r2 * 4.0);
   float core = exp(-r2 * 24.0);
-  vec3 c = vCol.rgb * glow + vec3(core * uCore * vCol.a);
+  vec3 c = vCol.rgb * glow + vec3(core * 0.55 * vCol.a);
   c *= vCol.a;
   // Premultiplied output whose alpha tracks brightness, so the glow adds to the page.
   outColor = vec4(c, min(1.0, max(c.r, max(c.g, c.b))));
@@ -69,27 +68,6 @@ const BB = [
   [5500, [1.0, 0.9, 0.78]], [6500, [0.98, 0.96, 0.95]], [8000, [0.82, 0.87, 1.0]],
   [12000, [0.68, 0.77, 1.0]], [30000, [0.6, 0.7, 1.0]],
 ];
-// Exaggerated temperature ramp: log Teff from 2 500 K to 12 600 K is stretched
-// over saturated stops, so the cool dwarfs that make up most of the cluster
-// spread from deep red to yellow instead of all reading orange.
-export const CONTRAST_RANGE = [3.4, 4.1];
-export const CONTRAST_STOPS = [
-  [0, [0.86, 0.08, 0.06]], [0.22, [1.0, 0.42, 0.06]], [0.42, [1.0, 0.86, 0.25]],
-  [0.58, [0.96, 0.97, 1.0]], [0.78, [0.45, 0.68, 1.0]], [1, [0.3, 0.32, 1.0]],
-];
-export function contrastColor(logT) {
-  const f = Math.min(1, Math.max(0, (logT - CONTRAST_RANGE[0]) / (CONTRAST_RANGE[1] - CONTRAST_RANGE[0])));
-  for (let k = 1; k < CONTRAST_STOPS.length; k++) {
-    const [f1, c1] = CONTRAST_STOPS[k];
-    if (f <= f1) {
-      const [f0, c0] = CONTRAST_STOPS[k - 1];
-      const u = (f - f0) / (f1 - f0);
-      return c0.map((v, i) => v + u * (c1[i] - v));
-    }
-  }
-  return CONTRAST_STOPS[CONTRAST_STOPS.length - 1][1];
-}
-
 export function teffColor(t) {
   if (t <= BB[0][0]) return BB[0][1];
   for (let k = 1; k < BB.length; k++) {
@@ -194,7 +172,6 @@ export class Renderer {
       const logT = snap.phot[2 * i + 1];
       let col;
       if (this.colorMode === 'temperature') col = teffColor(Math.pow(10, logT));
-      else if (this.colorMode === 'contrast') col = contrastColor(logT);
       else col = snap.meta[2 * i] === 0 ? p1 : p2;
       let a = Math.min(1, Math.max(0.35, 0.55 + 0.15 * (logL + 1.5)));
       let size = Math.min(9, Math.max(2.2, 3 + 1.1 * (logL + 1)));
@@ -232,7 +209,6 @@ export class Renderer {
     gl.uniformMatrix4fv(gl.getUniformLocation(this.prog, 'uView'), false, view);
     gl.uniformMatrix4fv(gl.getUniformLocation(this.prog, 'uProj'), false, proj);
     gl.uniform1f(gl.getUniformLocation(this.prog, 'uScale'), this.dpr * 60 / REF_DIST);
-    gl.uniform1f(gl.getUniformLocation(this.prog, 'uCore'), this.colorMode === 'contrast' ? 0.15 : 0.55);
     gl.bindVertexArray(this.vao);
     gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
     gl.bufferData(gl.ARRAY_BUFFER, d.subarray(0, n * 8), gl.DYNAMIC_DRAW);
