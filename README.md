@@ -36,8 +36,8 @@ npm test             # physics unit tests (Node 18+)
 |---|---|
 | Gravity | Direct summation, Plummer softening, kick-drift-kick leapfrog with a shared adaptive step. The force sum and update run in WebGL2 fragment shaders. |
 | Initial conditions | As in the paper: P1 is a King (1966) W₀ = 7 model with r_h = 5 pc. P2 is the same model shrunk by a factor (0.5 by default), 50:50 by number. Masses come from a Kroupa (2001) IMF over 0.1–50 M☉. The combined system is rescaled to virial equilibrium. |
-| Helium | P2's main-sequence lifetimes are scaled by eq. 1 of the paper, t/t(Y=0.248) = 10^(−1.074 ΔY − 2.776 ΔY²), normalised to the default Y = 0.24 + 2Z. As in NBODY6MP, nothing else about the stars depends on Y. |
-| Stellar evolution | Main-sequence lifetimes come from the Eggleton, Fitchett & Tout (1989) fit, rescaled so the turnoff at 12 Gyr is 0.8 M☉ (Z = 10⁻⁴). Below 8 M☉, stars lose 0.2 M☉ on the RGB and end as white dwarfs (Kalirai et al. 2008 IFMR). Stars of 8–20 M☉ become neutron stars and heavier ones become black holes. Natal kicks remove the neutron stars. Black holes are removed too, unless *Keep black holes* is on. |
+| Helium | P2's main-sequence lifetimes are scaled by eq. 1 of the paper, t/t(Y=0.248) = 10^(−1.074 ΔY² − 2.776 ΔY), normalised to the default Y = 0.24 + 2Z. With SSE this is NBODY6MP's own code in star.f, whose coefficients are −1.0598 and −2.7810. As in NBODY6MP, nothing else about the stars depends on Y. |
+| Stellar evolution | SSE (Hurley, Pols & Tout 2000), translated line by line from NBODY6MP's Fortran (see below). Each star is updated at its own look-up times, as in NBODY6's MDOT and TRDOT: wind mass loss capped at 2% per update, rejuvenation of main-sequence and Hertzsprung-gap stars, and SSE's white-dwarf, neutron-star and black-hole masses. Natal kicks remove the neutron stars. Black holes are removed too, unless *Keep black holes* is on. *Schematic lifetimes* switches to the earlier simple model, based on Eggleton, Fitchett & Tout (1989) lifetimes and the Kalirai et al. (2008) initial-final mass relation. |
 | Tidal field | A circular orbit at R_G in a flat rotation curve (220 km/s), using Hill's equations in the rotating frame. Stars beyond 2 r_t are removed. |
 | Diagnostics | Half-mass radii about the density centre, the mass-segregation gradient δα = dα/d ln(r/r_m) for 0.3–0.8 M☉ main-sequence stars (Webb & Vesperini 2016), turnoff masses, and an HR diagram. |
 
@@ -67,6 +67,12 @@ The costs of the scaling:
 Expect the trends from the paper, not its numbers.
 
 ### How it compares with the paper
+
+> **Superseded.** The ensembles below were run before a bug fix: the
+> squared and linear terms of eq. 1 were swapped, so P2 lifetimes were
+> scaled by ×0.81 at Y = 0.32 instead of ×0.59. With the fix, the
+> turnoff-mass gap at 4 Gyr is 0.14 M☉ (paper: 0.15 M☉). The ensembles
+> need re-running.
 
 An ensemble of 8 seeds at N = 1000 in isolation (CPU, Node), with P2 at
 Y = 0.32 and each run paired with a normal-helium twin. The table gives the
@@ -109,12 +115,33 @@ covers 1.15 t_rh. A shorter stage or a larger N reduces this.
 
 ### Differences from the paper
 
-- The paper used NBODY6 with SSE and the Miholics et al. (2015) Milky Way
-  potential. globsim uses schematic stellar evolution and a flat rotation curve.
-- The HR diagram is cosmetic. Luminosities and temperatures come from simple
-  scaling relations, and only lifetimes and masses feed back into the dynamics.
+- The paper used the Miholics et al. (2015) Milky Way potential. globsim uses
+  a flat rotation curve and Hill's approximation.
+- Stellar updates happen at bookkeeping ticks, every ~10 Myr (~1 Myr during
+  the early clock), rather than at each star's exact look-up time.
+- With *Schematic lifetimes*, the HR diagram is cosmetic. With SSE, it shows
+  SSE's luminosities and radii.
 - There are no primordial binaries and no binary evolution, and softening
   prevents dynamical binaries from forming.
+
+### The SSE port
+
+`vendor/sse` holds NBODY6MP's copies of zcnsts.f, zfuncs.f, star.f, hrdiag.f,
+mlwind.f and mrenv.f, unchanged. `sevolve.f` is written for globsim: a
+single-star version of NBODY6's INSTAR, MDOT and TRDOT. `scripts/f2js.py`
+translates all of it into `src/physics/sse/sse.gen.js`:
+
+```sh
+python3 scripts/f2js.py --skip celamf src/physics/sse/sse.gen.js \
+  vendor/sse/{zcnsts,zfuncs,star,hrdiag,mlwind,mrenv,sevolve}.f
+```
+
+`vendor/sse/ref_tracks.f` evolves 17 masses at both helium abundances with
+the original Fortran. `scripts/sse-reference.sh` (needs gfortran) stores a
+sample of the output in `tests/fixtures`, and `tests/sse.test.mjs` checks
+the JavaScript against it. The tracks agree to about 10⁻¹³. In one track, a
+star that lands exactly on a phase boundary changes type one minimal step
+later in Fortran, and its final state still agrees to 10⁻⁹.
 
 ## Layout
 
@@ -129,9 +156,12 @@ src/physics/          everything that also runs in Node
   ics.js              King-model initial conditions for two populations
   king.js             King (1966) model solver and sampler
   imf.js              Kroupa IMF
-  stellar.js          lifetimes, helium scaling, remnants, photometry
+  stellar.js          schematic lifetimes, helium scaling, remnants, photometry
+  sse/                SSE: generated sse.gen.js and the wrapper in index.js
   analysis.js         mass-function slope and δα
-scripts/              build-artifact.mjs (page without its document wrapper)
+scripts/              build-artifact.mjs (page without its document wrapper),
+                      f2js.py (Fortran to JavaScript), sse-reference.sh
+vendor/sse/           SSE Fortran from NBODY6MP, plus the single-star driver
 tests/                node --test suite
 ```
 
@@ -141,6 +171,7 @@ tests/                node --test suite
 - Aarseth 2003, *Gravitational N-Body Simulations*
 - Baumgardt 2001, MNRAS, 325, 1323
 - Eggleton, Fitchett & Tout 1989, ApJ, 347, 998
+- Hurley, Pols & Tout 2000, MNRAS, 315, 543
 - Kalirai et al. 2008, ApJ, 676, 594
 - King 1966, AJ, 71, 64
 - Kroupa 2001, MNRAS, 322, 231

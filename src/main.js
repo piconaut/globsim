@@ -1,5 +1,6 @@
 import { Simulation, DEFAULTS } from './physics/sim.js';
 import { heliumLifetimeRatio, defaultHelium } from './physics/stellar.js';
+import { sseMsLifetime } from './physics/sse/index.js';
 import { GpuIntegrator, gpuSupported, advance } from './gpu.js';
 import { Renderer } from './render.js';
 import { TimeChart, HRChart } from './charts.js';
@@ -80,7 +81,10 @@ function push(role, pt) {
 function updateLabels() {
   const p = state.params;
   $('yp2-out').textContent = p.yP2.toFixed(3);
-  const ratio = heliumLifetimeRatio(p.yP2) / heliumLifetimeRatio(defaultHelium(p.z));
+  const main = state.runs[0]?.sim;
+  const ratio = main?.sse
+    ? sseMsLifetime(1, main.sse.zpars[1]) / sseMsLifetime(1, main.sse.zpars[0])
+    : heliumLifetimeRatio(p.yP2) / heliumLifetimeRatio(defaultHelium(p.z));
   $('yp2-note').textContent = `P2 main-sequence lifetimes ×${ratio.toFixed(2)}`;
   $('scale-out').textContent = `${(p.p2Scale * p.rhP1pc).toFixed(1)} pc`;
   $('rg-out').textContent = `${p.rgKpc} kpc`;
@@ -93,6 +97,7 @@ function updateLabels() {
   $('n').value = String(p.n);
   $('bh').checked = p.retainBH;
   $('early').value = String(p.earlyMyr);
+  $('stellar').value = p.stellar;
   const info = state.runs[0]?.sim;
   $('early-note').textContent = info
     ? `1 time unit = ${info.myrPerUnitFast.toFixed(2)} Myr early, ${info.myrPerUnit.toFixed(1)} Myr after`
@@ -121,6 +126,7 @@ $('env-orbit').addEventListener('click', () => setParams({ tidal: true }));
 $('n').addEventListener('change', (e) => setParams({ n: +e.target.value }));
 $('bh').addEventListener('change', (e) => setParams({ retainBH: e.target.checked }));
 $('early').addEventListener('change', (e) => setParams({ earlyMyr: +e.target.value }));
+$('stellar').addEventListener('change', (e) => setParams({ stellar: e.target.value }));
 $('twin').addEventListener('change', (e) => { state.twin = e.target.checked; restart(); });
 $('seed').addEventListener('click', () => setParams({ seed: (Math.random() * 1e9) | 0 }));
 $('restart').addEventListener('click', restart);

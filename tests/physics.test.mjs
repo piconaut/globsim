@@ -44,7 +44,12 @@ test('initial conditions are virialised in Hénon units, P2 at half radius', () 
 
 test('helium lifetime ratio matches Fare et al. (2018) eq. 1', () => {
   assert.equal(heliumLifetimeRatio(0.248), 1);
-  close(heliumLifetimeRatio(0.32), Math.pow(10, -1.074 * 0.072 - 2.776 * 0.072 ** 2), 1e-12, 'Y = 0.32');
+  close(heliumLifetimeRatio(0.32), Math.pow(10, -1.074 * 0.072 ** 2 - 2.776 * 0.072), 1e-12, 'Y = 0.32');
+  // Matches NBODY6MP's star.f coefficients to within 1% over the paper's range.
+  for (const y of [0.3, 0.32, 0.36, 0.4]) {
+    const d = y - 0.248;
+    close(heliumLifetimeRatio(y) / Math.pow(10, -1.05980983377 * d * d - 2.78101476398 * d), 1, 0.01, `star.f Y = ${y}`);
+  }
   // Helium-rich stars live shorter lives at every mass.
   for (const m of [0.6, 0.8, 1, 5]) assert.ok(msLifetime(m, 0.32) < msLifetime(m, 0.2402));
 });

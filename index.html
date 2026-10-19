@@ -298,6 +298,13 @@ input[type="checkbox"] { accent-color: var(--accent); }
         </select>
       </div>
       <div class="row">
+        <label for="stellar">Stellar evolution</label>
+        <select id="stellar">
+          <option value="sse">SSE, as in NBODY6MP</option>
+          <option value="schematic">Schematic lifetimes</option>
+        </select>
+      </div>
+      <div class="row">
         <label for="early">Early clock</label>
         <select id="early">
           <option value="0">Relaxation-scaled from t = 0</option>
@@ -357,12 +364,12 @@ input[type="checkbox"] { accent-color: var(--accent); }
       <canvas id="hr-chart" aria-label="Hertzsprung-Russell diagram"></canvas>
       <div class="axis-x">T<sub>eff</sub>, K · y-axis log L/L☉</div>
       <div class="tip" id="hr-tip" hidden></div>
-      <p>Only the main-sequence lifetime depends on helium, as in NBODY6MP, so P2 shows its own fainter turnoff and a bluer horizontal branch.</p>
+      <p>Only the main-sequence lifetime depends on helium, as in NBODY6MP, so P2 shows its own fainter turnoff.</p>
     </section>
 
     <section class="notes">
       <h2>How it works</h2>
-      <p>Direct N-body with Plummer softening and a leapfrog integrator. The force sum runs on the GPU. Initial conditions follow the paper: P1 is a King W<sub>0</sub> = 7 model with r<sub>h</sub> = 5 pc, P2 is the same model shrunk, the masses come from a Kroupa IMF over 0.1–50 M☉, and Z = 0.0001.</p>
+      <p>Direct N-body with Plummer softening and a leapfrog integrator. The force sum runs on the GPU. Stars evolve with SSE (Hurley, Pols &amp; Tout 2000), translated line by line from NBODY6MP's Fortran, including its helium-dependent main-sequence lifetimes. Initial conditions follow the paper: P1 is a King W<sub>0</sub> = 7 model with r<sub>h</sub> = 5 pc, P2 is the same model shrunk, the masses come from a Kroupa IMF over 0.1–50 M☉, and Z = 0.0001.</p>
       <p>A few thousand particles stand in for 40 000 stars. Time is scaled by the half-mass relaxation time, so relaxation and stellar evolution keep their real ratio. That leaves the crossing time about 10× too slow, so the supernova era passes in about one crossing time instead of ten. <i>Early clock</i> runs the start at the real crossing time instead; relaxation then runs too fast until the switch. The Galactic tide is a circular orbit in a flat 220 km/s rotation curve, scaled to keep r<sub>t</sub>/r<sub>h</sub>. Neutron stars always leave on natal kicks.</p>
     </section>
   </aside>
