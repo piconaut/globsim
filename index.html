@@ -116,6 +116,23 @@ a { color: var(--accent); text-underline-offset: 3px; }
 }
 .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--c); margin-right: 6px; box-shadow: 0 0 8px var(--c); }
 
+.scale {
+  position: absolute;
+  left: 16px;
+  bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font: 400 var(--step--1) var(--font-data);
+  color: var(--muted);
+  pointer-events: none;
+}
+.scale-bar {
+  display: inline-block;
+  height: 6px;
+  border: 1px solid var(--muted);
+  border-top: 0;
+}
 .transport {
   position: absolute;
   right: 14px;
@@ -208,6 +225,7 @@ input[type="checkbox"] { accent-color: var(--accent); }
   .sky { height: 62vh; min-height: 340px; }
   .panel { overflow: visible; padding-right: 0; }
   .legend { top: auto; right: auto; left: 16px; bottom: 96px; }
+  .scale { bottom: 124px; }
   .rate { display: none; }
   .transport { left: 14px; flex-wrap: wrap; justify-content: flex-end; }
   .speed input { width: 96px; }
@@ -239,6 +257,10 @@ input[type="checkbox"] { accent-color: var(--accent); }
     <div class="legend" id="legend-pop">
       <span><i class="dot" style="--c: var(--p1)"></i>P1 · normal helium</span>
       <span><i class="dot" style="--c: var(--p2)"></i>P2 · helium-rich</span>
+    </div>
+    <div class="scale" aria-label="Scale bar">
+      <span class="scale-bar" id="scale-bar"></span>
+      <span id="scale-label">10 pc</span>
     </div>
     <div class="transport">
       <span class="rate" id="rate"></span>
@@ -292,9 +314,9 @@ input[type="checkbox"] { accent-color: var(--accent); }
         <label for="n">Particles</label>
         <select id="n">
           <option value="1000">1 000 (fast)</option>
-          <option value="2000">2 000</option>
+          <option value="2000">2 000 (faster)</option>
           <option value="3000">3 000</option>
-          <option value="4000">4 000 (slow)</option>
+          <option value="4000">4 000</option>
         </select>
       </div>
       <div class="row">
