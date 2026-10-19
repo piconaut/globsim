@@ -5,7 +5,7 @@
 // helium changes the MS lifetime only (Fare, Webb & Sills 2018, eq. 1);
 // luminosities and temperatures are cosmetic, for the HR diagram and colours.
 
-export const KIND = { MS: 0, RGB: 1, HB: 2, WD: 3, NS: 4, BH: 5 };
+export const KIND = { MS: 0, RGB: 1, HB: 2, WD: 3, NS: 4, BH: 5, NONE: 6 };
 
 export const Z_DEFAULT = 0.0001;
 export const defaultHelium = (z) => 0.24 + 2 * z;

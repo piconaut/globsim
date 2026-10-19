@@ -203,7 +203,7 @@ export class HRChart {
       ctx.strokeStyle = css('--ink');
       ctx.lineWidth = 1.5;
       ctx.beginPath(); ctx.arc(near.X, near.Y, 5, 0, 7); ctx.stroke();
-      const names = ['Main sequence', 'Giant branch', 'Horizontal branch', 'White dwarf'];
+      const names = ['Main sequence', 'Subgiant or giant', 'Core helium burning', 'White dwarf'];
       const kind = snap.meta[2 * i + 1];
       const m = masses ? masses[i] : null;
       this.tooltip.innerHTML = `<div class="tt-head">${names[kind]} · P${snap.meta[2 * i] + 1}</div>` +

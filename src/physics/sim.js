@@ -12,6 +12,7 @@ import {
   KIND, Z_DEFAULT, defaultHelium, msLifetime, evolveStar, photometry, turnoffMass,
 } from './stellar.js';
 import { massSegregation } from './analysis.js';
+import { SSEPopulation, kindFromKw, sseTurnoffMass } from './sse/index.js';
 
 export const DEFAULTS = {
   n: 2000,
@@ -31,6 +32,8 @@ export const DEFAULTS = {
   earlyMyr: 0,
   eta: 0.2,
   evolve: true,
+  // 'sse' follows NBODY6MP's SSE; 'schematic' is the simple lifetime model.
+  stellar: 'sse',
 };
 
 export class Simulation {
@@ -54,6 +57,9 @@ export class Simulation {
     for (let i = 0; i < cap; i++) {
       this.tms[i] = msLifetime(this.m0[i], this.pop[i] === 0 ? p.yP1 : p.yP2, p.z);
     }
+    this.sse = p.stellar === 'sse' ? new SSEPopulation(c.mass, this.pop, [p.yP1, p.yP2], p.z) : null;
+    this.swapped = [this.x, this.y, this.z, this.vx, this.vy, this.vz, this.m, this.mass,
+      this.m0, this.pop, this.kind, this.phase, this.tms, ...(this.sse ? this.sse.arrays() : [])];
     this.eps = 0.012 * Math.cbrt(2000 / p.n);
     this.eps2 = this.eps * this.eps;
 
@@ -208,10 +214,7 @@ export class Simulation {
 
   remove(i) {
     const last = this.n - 1;
-    for (const a of [this.x, this.y, this.z, this.vx, this.vy, this.vz, this.m, this.mass,
-      this.m0, this.pop, this.kind, this.phase, this.tms]) {
-      a[i] = a[last];
-    }
+    for (const a of this.swapped) a[i] = a[last];
     this.n--;
   }
 
@@ -219,7 +222,7 @@ export class Simulation {
     if (!this.p.evolve) return;
     const t = this.tMyr;
     for (let i = this.n - 1; i >= 0; i--) {
-      const s = evolveStar(this.m0[i], this.tms[i], t);
+      const s = this.sse ? this.sseState(i, t) : evolveStar(this.m0[i], this.tms[i], t);
       if (s.mass !== this.mass[i]) {
         this.massLost.stellar += this.mass[i] - s.mass;
       }
@@ -228,11 +231,21 @@ export class Simulation {
       this.mass[i] = s.mass;
       this.m[i] = s.mass / this.massNorm;
       // Supernova natal kicks exceed the escape speed by far: remove the remnant.
-      if (s.kind === KIND.NS || (s.kind === KIND.BH && !this.p.retainBH)) {
+      if (s.kind === KIND.NS || s.kind === KIND.NONE || (s.kind === KIND.BH && !this.p.retainBH)) {
         this.massLost.kicked += s.mass;
         this.remove(i);
       }
     }
+  }
+
+  sseState(i, t) {
+    this.sse.advance(i, t);
+    return { kind: kindFromKw(this.sse.kw[i]), mass: this.sse.mt[i], phase: 0 };
+  }
+
+  turnoff(t, pop) {
+    if (this.sse) return sseTurnoffMass(t, this.sse.zpars[pop]);
+    return turnoffMass(t, pop === 0 ? this.p.yP1 : this.p.yP2, this.p.z);
   }
 
   findCenter() {
@@ -317,7 +330,7 @@ export class Simulation {
       mass: massOf(mem),
       rh: { all: rh(mem), p1: rh(p1), p2: rh(p2) },
       rt: this.omega2 ? this.tidalRadius() * this.pcPerUnit : null,
-      turnoff: { p1: turnoffMass(t, this.p.yP1, this.p.z), p2: turnoffMass(t, this.p.yP2, this.p.z) },
+      turnoff: { p1: this.turnoff(t, 0), p2: this.turnoff(t, 1) },
       meanMs: { p1: meanMs(p1), p2: meanMs(p2) },
       dAlpha: { all: seg(mem), p1: seg(p1), p2: seg(p2) },
       nPop: { p1: p1.length, p2: p2.length },
@@ -339,7 +352,7 @@ export class Simulation {
       pos[3 * i + 2] = this.z[i] * s;
       meta[2 * i] = this.pop[i];
       meta[2 * i + 1] = this.kind[i];
-      const ph = photometry(this.m0[i], this.mass[i], this.kind[i], this.phase[i]);
+      const ph = this.sse ? this.sse.photometry(i) : photometry(this.m0[i], this.mass[i], this.kind[i], this.phase[i]);
       phot[2 * i] = ph.logL;
       phot[2 * i + 1] = ph.logT;
     }
