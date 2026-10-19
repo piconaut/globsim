@@ -19,10 +19,12 @@ function tmsEFT(m) {
 // Rescale so a 0.8 Msun star leaves the MS at 12 Gyr, typical for Z ~ 1e-4.
 const METAL_POOR = 12000 / tmsEFT(0.8);
 
-// Fare, Webb & Sills (2018) eq. 1: MS lifetime relative to Y = 0.248.
+// Fare, Webb & Sills (2018) eq. 1: MS lifetime relative to Y = 0.248,
+// log10(t / t0) = -1.074 ΔY² - 2.776 ΔY. NBODY6MP's star.f uses the same
+// form with coefficients -1.0598 and -2.7810.
 export function heliumLifetimeRatio(y) {
   const d = y - 0.248;
-  return Math.pow(10, -1.074 * d - 2.776 * d * d);
+  return Math.pow(10, -1.074 * d * d - 2.776 * d);
 }
 
 // MS lifetime in Myr. The helium factor is taken relative to the population's

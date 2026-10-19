@@ -36,7 +36,7 @@ npm test             # physics unit tests (Node 18+)
 |---|---|
 | Gravity | Direct summation, Plummer softening, kick-drift-kick leapfrog with a shared adaptive step. The force sum and update run in WebGL2 fragment shaders. |
 | Initial conditions | As in the paper: P1 is a King (1966) W₀ = 7 model with r_h = 5 pc. P2 is the same model shrunk by a factor (0.5 by default), 50:50 by number. Masses come from a Kroupa (2001) IMF over 0.1–50 M☉. The combined system is rescaled to virial equilibrium. |
-| Helium | P2's main-sequence lifetimes are scaled by eq. 1 of the paper, t/t(Y=0.248) = 10^(−1.074 ΔY − 2.776 ΔY²), normalised to the default Y = 0.24 + 2Z. As in NBODY6MP, nothing else about the stars depends on Y. |
+| Helium | P2's main-sequence lifetimes are scaled by eq. 1 of the paper, t/t(Y=0.248) = 10^(−1.074 ΔY² − 2.776 ΔY), normalised to the default Y = 0.24 + 2Z. As in NBODY6MP, nothing else about the stars depends on Y. |
 | Stellar evolution | Main-sequence lifetimes come from the Eggleton, Fitchett & Tout (1989) fit, rescaled so the turnoff at 12 Gyr is 0.8 M☉ (Z = 10⁻⁴). Below 8 M☉, stars lose 0.2 M☉ on the RGB and end as white dwarfs (Kalirai et al. 2008 IFMR). Stars of 8–20 M☉ become neutron stars and heavier ones become black holes. Natal kicks remove the neutron stars. Black holes are removed too, unless *Keep black holes* is on. |
 | Tidal field | A circular orbit at R_G in a flat rotation curve (220 km/s), using Hill's equations in the rotating frame. Stars beyond 2 r_t are removed. |
 | Diagnostics | Half-mass radii about the density centre, the mass-segregation gradient δα = dα/d ln(r/r_m) for 0.3–0.8 M☉ main-sequence stars (Webb & Vesperini 2016), turnoff masses, and an HR diagram. |
@@ -67,6 +67,12 @@ The costs of the scaling:
 Expect the trends from the paper, not its numbers.
 
 ### How it compares with the paper
+
+> **Superseded.** The ensembles below were run before a bug fix: the
+> squared and linear terms of eq. 1 were swapped, so P2 lifetimes were
+> scaled by ×0.81 at Y = 0.32 instead of ×0.59. With the fix, the
+> turnoff-mass gap at 4 Gyr is 0.14 M☉ (paper: 0.15 M☉). The ensembles
+> need re-running.
 
 An ensemble of 8 seeds at N = 1000 in isolation (CPU, Node), with P2 at
 Y = 0.32 and each run paired with a normal-helium twin. The table gives the
