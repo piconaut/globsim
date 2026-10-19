@@ -135,6 +135,7 @@ export class Renderer {
     this.yaw = 0.6;
     this.pitch = 1.05;
     this.dist = REF_DIST;
+    this.fovy = 0.75; // vertical field of view, radians
     this.colorMode = 'population';
     this.autoRotate = true;
   }
@@ -186,7 +187,7 @@ export class Renderer {
     gl.viewport(0, 0, this.canvas.width, this.canvas.height);
     gl.clearColor(0, 0, 0, 0);
     gl.clear(gl.COLOR_BUFFER_BIT);
-    const proj = perspective(0.75, this.canvas.width / Math.max(1, this.canvas.height), 0.1, 5000);
+    const proj = perspective(this.fovy, this.canvas.width / Math.max(1, this.canvas.height), 0.1, 5000);
     const view = orbitView(this.yaw, this.pitch, this.dist);
     gl.enable(gl.BLEND);
     gl.blendFunc(gl.ONE, gl.ONE);

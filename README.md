@@ -68,50 +68,42 @@ Expect the trends from the paper, not its numbers.
 
 ### How it compares with the paper
 
-> **Superseded.** The ensembles below were run before a bug fix: the
-> squared and linear terms of eq. 1 were swapped, so P2 lifetimes were
-> scaled by ×0.81 at Y = 0.32 instead of ×0.59. With the fix, the
-> turnoff-mass gap at 4 Gyr is 0.14 M☉ (paper: 0.15 M☉). The ensembles
-> need re-running.
+Ensembles of 8 seeds at N = 1000 in isolation (CPU, Node), with SSE and P2 at
+Y = 0.32. Each run is paired with a normal-helium twin from the same initial
+conditions. The tables give the mean ratio of half-mass radii (helium-rich run
+over twin) ± the standard error, averaged over ±0.5 Gyr.
 
-An ensemble of 8 seeds at N = 1000 in isolation (CPU, Node), with P2 at
-Y = 0.32 and each run paired with a normal-helium twin. The table gives the
-mean ratio of half-mass radii (helium-rich run over twin) ± the standard error,
-averaged over ±0.5 Gyr:
+Relaxation-scaled from t = 0:
 
 | t (Gyr) | whole cluster | P1 | P2 |
 |---|---|---|---|
-| 2 | 0.976 ± 0.013 | 0.998 ± 0.010 | 0.948 ± 0.022 |
-| 6 | 0.997 ± 0.029 | 1.019 ± 0.040 | 0.965 ± 0.037 |
-| 10 | 0.979 ± 0.036 | 1.036 ± 0.041 | 0.939 ± 0.038 |
+| 2 | 0.955 ± 0.019 | 0.988 ± 0.025 | 0.947 ± 0.017 |
+| 6 | 0.983 ± 0.023 | 0.989 ± 0.026 | 0.999 ± 0.032 |
+| 10 | 0.982 ± 0.028 | 0.969 ± 0.035 | 1.001 ± 0.032 |
+| 12 | 0.969 ± 0.043 | 0.958 ± 0.056 | 0.987 ± 0.035 |
 
-The cluster with a helium-rich P2 comes out slightly smaller, as in the paper,
-but only at about 2σ. The mean main-sequence mass of P2 ends up about
-0.009 M☉ below P1's (paper: about 0.01 M☉). Unlike the paper, the shrinkage
-shows up in P2 rather than P1. P1 is consistent with no change. The likely
-causes are the small N and the compressed early mass loss. The turnoff-mass
-gap is also smaller than in the paper: 0.05 M☉ at ΔY = 0.08, against 0.15 M☉,
-because the lifetime fit here is steeper in mass than SSE's.
-
-#### With the two-stage clock
-
-The same 8 seeds with *Early clock* at 50 Myr:
+*Early clock* at 50 Myr:
 
 | t (Gyr) | whole cluster | P1 | P2 |
 |---|---|---|---|
-| 2 | 0.968 ± 0.012 | 0.980 ± 0.027 | 0.954 ± 0.017 |
-| 6 | 0.974 ± 0.012 | 0.959 ± 0.029 | 0.984 ± 0.015 |
-| 10 | 0.965 ± 0.017 | 0.947 ± 0.024 | 0.976 ± 0.021 |
-| 12 | 0.940 ± 0.022 | 0.917 ± 0.039 | 0.958 ± 0.024 |
+| 2 | 0.947 ± 0.030 | 0.921 ± 0.029 | 0.963 ± 0.039 |
+| 6 | 0.950 ± 0.024 | 0.922 ± 0.018 | 0.973 ± 0.038 |
+| 10 | 0.925 ± 0.021 | 0.901 ± 0.024 | 0.958 ± 0.032 |
+| 12 | 0.924 ± 0.023 | 0.891 ± 0.022 | 0.966 ± 0.040 |
 
-With the supernova era at its real crossing time, the whole cluster is
-smaller at every time, and from about 6 Gyr on P1 shows the larger difference.
-That ordering matches the paper. The early stage has its own cost, though.
-At N = 1000 the 50 Myr real-time stage covers 2.6 relaxation times, against
-0.13 in a real cluster. The massive stars therefore segregate before they
-explode, and the cluster expands much more: r_h reaches about 16 pc at
-12 Gyr, against about 11 pc without the early stage. At N = 2000 the stage
-covers 1.15 t_rh. A shorter stage or a larger N reduces this.
+In both, the cluster with a helium-rich P2 is smaller, as in the paper. P2's
+mean main-sequence mass ends up 0.014–0.016 M☉ below P1's (paper: about
+0.01 M☉).
+
+Without the early clock, the P1 and P2 differences are within the noise. With
+it, P1 shows the largest difference from 1 Gyr on, at 4–5σ, which is the
+paper's ordering. The effect is larger than the paper's, though. At N = 1000
+the 50 Myr stage covers 2.6 relaxation times, against 0.13 in a real cluster.
+The cluster therefore expands to r_h ≈ 15 pc by 1 Gyr, against ≈ 7 pc without
+the early clock. These runs show the direction of the effect more reliably
+than its size.
+
+The superseded results from before the eq. 1 fix are in the git history.
 
 ### Differences from the paper
 

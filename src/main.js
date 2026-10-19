@@ -24,7 +24,7 @@ const useGpu = gpuSupported(gl);
 const renderer = gl ? new Renderer(gl, canvas, [hexToRgb(css('--p1')), hexToRgb(css('--p2'))]) : null;
 
 const state = {
-  params: { ...DEFAULTS, ...PRESETS.fig3, n: useGpu ? 2000 : 1000 },
+  params: { ...DEFAULTS, ...PRESETS.fig3, n: useGpu ? 4000 : 1000, earlyMyr: 50 },
   twin: true,
   playing: true,
   runs: [],
@@ -154,21 +154,55 @@ $('color').addEventListener('change', (e) => {
   $('legend-pop').hidden = e.target.value !== 'population';
 });
 
-// Orbit and zoom the camera.
-let drag = null;
-canvas.addEventListener('pointerdown', (e) => { drag = [e.clientX, e.clientY]; canvas.setPointerCapture(e.pointerId); });
-canvas.addEventListener('pointerup', () => { drag = null; });
+// Orbit the camera with one pointer; zoom with the wheel or a two-finger pinch.
+const pointers = new Map();
+let pinch = null;
+const zoomBy = (factor) => {
+  if (renderer) renderer.dist = Math.min(600, Math.max(8, renderer.dist * factor));
+};
+const spread = () => {
+  const [a, b] = [...pointers.values()];
+  return Math.hypot(a[0] - b[0], a[1] - b[1]);
+};
+canvas.addEventListener('pointerdown', (e) => {
+  pointers.set(e.pointerId, [e.clientX, e.clientY]);
+  try { canvas.setPointerCapture(e.pointerId); } catch { /* pointer already gone */ }
+  pinch = pointers.size === 2 ? spread() : null;
+});
+const release = (e) => {
+  pointers.delete(e.pointerId);
+  pinch = pointers.size === 2 ? spread() : null;
+};
+canvas.addEventListener('pointerup', release);
+canvas.addEventListener('pointercancel', release);
 canvas.addEventListener('pointermove', (e) => {
-  if (!drag || !renderer) return;
-  renderer.yaw += (e.clientX - drag[0]) * 0.006;
-  renderer.pitch = Math.min(3.1, Math.max(0.05, renderer.pitch - (e.clientY - drag[1]) * 0.006));
-  drag = [e.clientX, e.clientY];
+  const prev = pointers.get(e.pointerId);
+  if (!prev || !renderer) return;
+  pointers.set(e.pointerId, [e.clientX, e.clientY]);
+  if (pointers.size === 2 && pinch) {
+    const d = spread();
+    if (d > 0) zoomBy(pinch / d);
+    pinch = d;
+  } else if (pointers.size === 1) {
+    renderer.yaw += (e.clientX - prev[0]) * 0.006;
+    renderer.pitch = Math.min(3.1, Math.max(0.05, renderer.pitch - (e.clientY - prev[1]) * 0.006));
+  }
 });
 canvas.addEventListener('wheel', (e) => {
-  if (!renderer) return;
   e.preventDefault();
-  renderer.dist = Math.min(600, Math.max(8, renderer.dist * Math.exp(e.deltaY * 0.001)));
+  zoomBy(Math.exp(e.deltaY * 0.001));
 }, { passive: false });
+
+// Scale bar: pixels per pc at the camera's focus distance, rounded to a 1-2-5 length.
+function updateScale() {
+  if (!renderer) return;
+  const pxPerPc = (canvas.clientHeight / 2) / Math.tan(renderer.fovy / 2) / renderer.dist;
+  const target = 110 / pxPerPc;
+  const mag = Math.pow(10, Math.floor(Math.log10(target)));
+  const pc = [1, 2, 5, 10].map((k) => k * mag).reduce((a, b) => (Math.abs(b - target) < Math.abs(a - target) ? b : a));
+  $('scale-bar').style.width = `${Math.round(pc * pxPerPc)}px`;
+  $('scale-label').textContent = `${pc >= 1 ? pc : pc.toPrecision(1)} pc`;
+}
 $('spin').addEventListener('change', (e) => { if (renderer) renderer.autoRotate = e.target.checked; });
 
 // ---- Readouts ----
@@ -236,6 +270,7 @@ function frame(now) {
   }
   if (runs[0]) snap = runs[0].sim.snapshot();
   if (renderer) renderer.draw(snap, dtSec);
+  updateScale();
   if (now - lastSlow > 250) {
     const simMyr = runs[0] ? runs[0].sim.tMyr : 0;
     const rate = ((simMyr - simMyrAtLast) / (now - lastSlow)) * 1000;
