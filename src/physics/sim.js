@@ -26,6 +26,9 @@ export const DEFAULTS = {
   rgKpc: 20,
   vcKms: 220,
   retainBH: false,
+  // Run the first `earlyMyr` at the real crossing time before switching to
+  // relaxation-time scaling. 0 scales by relaxation time from the start.
+  earlyMyr: 0,
   eta: 0.2,
   evolve: true,
 };
@@ -67,7 +70,14 @@ export class Simulation {
     );
     const lnSim = Math.log(Math.min(0.11 * p.n, rhSim / this.eps));
     const trhSim = relaxationTime(p.n, rhSim, 1, 1, lnSim);
+    // Two clocks. `slow` keeps t_rh / t_SE right; `fast` is the physical
+    // Hénon time unit, which keeps t_cr / t_SE right. The early stage uses
+    // `fast` so the supernova era spans its real number of crossing times,
+    // at the cost of relaxation running too quickly during that stage.
     this.myrPerUnit = trhPhys / trhSim;
+    this.myrPerUnitFast = Math.sqrt(this.pcPerUnit ** 3 / (G_PC_MSUN_MYR * this.massPhys));
+    this.earlyMyr = this.myrPerUnitFast < this.myrPerUnit ? p.earlyMyr : 0;
+    this.earlyUnits = this.earlyMyr / this.myrPerUnitFast;
     this.trhMyr = trhPhys;
     this.rh0 = rhSim;
 
@@ -83,7 +93,7 @@ export class Simulation {
 
     this.t = 0;
     this.steps = 0;
-    this.statsEvery = 10 / this.myrPerUnit; // ~10 Myr
+    this.statsEvery = 10 / this.myrPerUnit; // ~10 Myr once relaxation-scaled, ~1 Myr in the early stage
     this.nextStats = 0;
     this.center = [0, 0, 0];
     this.massLost = { stellar: 0, escaped: 0, kicked: 0 };
@@ -94,7 +104,18 @@ export class Simulation {
   }
 
   get tMyr() {
-    return this.t * this.myrPerUnit;
+    return this.myrAt(this.t);
+  }
+
+  // Physical time (Myr) at simulation time t, and its inverse.
+  myrAt(t) {
+    if (t < this.earlyUnits) return t * this.myrPerUnitFast;
+    return this.earlyMyr + (t - this.earlyUnits) * this.myrPerUnit;
+  }
+
+  unitsAt(myr) {
+    if (myr < this.earlyMyr) return myr / this.myrPerUnitFast;
+    return this.earlyUnits + (myr - this.earlyMyr) / this.myrPerUnit;
   }
 
   computeAcc() {
@@ -340,6 +361,8 @@ export class Simulation {
     return {
       n: this.p.n,
       myrPerUnit: this.myrPerUnit,
+      myrPerUnitFast: this.myrPerUnitFast,
+      earlyMyr: this.earlyMyr,
       trhMyr: this.trhMyr,
       pcPerUnit: this.pcPerUnit,
       massPhys: this.massPhys,

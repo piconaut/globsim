@@ -96,3 +96,17 @@ test('time scaling maps the simulation to a 40 000-star cluster', () => {
   const first = s.history[0];
   close(first.rh.p1, 5, 0.2, 'P1 half-mass radius in pc (about the density centre)');
 });
+
+test('two-stage clock runs at the crossing time early, then by relaxation time', () => {
+  const s = new Simulation({ n: 1000, earlyMyr: 50 });
+  const info = s.info();
+  // The physical Hénon time unit of a ~2e4 Msun, few-pc cluster is about 1 Myr.
+  assert.ok(info.myrPerUnitFast > 0.5 && info.myrPerUnitFast < 2, `fast = ${info.myrPerUnitFast}`);
+  assert.ok(info.myrPerUnit > 5 * info.myrPerUnitFast, 'relaxation scaling is the slower clock');
+  // Continuous at the switch, and unitsAt inverts myrAt on both sides of it.
+  close(s.myrAt(s.earlyUnits), 50, 1e-9, 'switch time');
+  for (const myr of [10, 49.9, 50, 51, 3000]) close(s.myrAt(s.unitsAt(myr)), myr, 1e-9, `round trip ${myr}`);
+  // With the early stage off, the mapping is a single linear scale.
+  const plain = new Simulation({ n: 1000 });
+  close(plain.myrAt(10), 10 * plain.myrPerUnit, 1e-9, 'no early stage');
+});

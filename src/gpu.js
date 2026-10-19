@@ -218,7 +218,7 @@ export class GpuIntegrator {
 export function advance(sim, gpu, maxSteps, untilMyr = Infinity) {
   const dt = sim.chooseDt();
   const toTick = Math.ceil((sim.nextStats - sim.t) / dt);
-  const toGoal = Math.ceil((untilMyr / sim.myrPerUnit - sim.t) / dt);
+  const toGoal = Math.ceil((sim.unitsAt(untilMyr) - sim.t) / dt);
   const steps = Math.max(1, Math.min(maxSteps, toTick, toGoal));
   if (gpu) gpu.run(steps, dt);
   else {
