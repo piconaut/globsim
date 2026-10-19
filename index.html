@@ -297,6 +297,16 @@ input[type="checkbox"] { accent-color: var(--accent); }
           <option value="4000">4 000 (slow)</option>
         </select>
       </div>
+      <div class="row">
+        <label for="early">Early clock</label>
+        <select id="early">
+          <option value="0">Relaxation-scaled from t = 0</option>
+          <option value="25">Real crossing time to 25 Myr</option>
+          <option value="50">Real crossing time to 50 Myr</option>
+          <option value="100">Real crossing time to 100 Myr</option>
+        </select>
+        <p class="note" id="early-note"></p>
+      </div>
       <div class="checks">
         <label><input id="twin" type="checkbox" checked> Twin run with P2 at normal helium</label>
         <label><input id="bh" type="checkbox"> Keep black holes</label>
@@ -353,7 +363,7 @@ input[type="checkbox"] { accent-color: var(--accent); }
     <section class="notes">
       <h2>How it works</h2>
       <p>Direct N-body with Plummer softening and a leapfrog integrator. The force sum runs on the GPU. Initial conditions follow the paper: P1 is a King W<sub>0</sub> = 7 model with r<sub>h</sub> = 5 pc, P2 is the same model shrunk, the masses come from a Kroupa IMF over 0.1–50 M☉, and Z = 0.0001.</p>
-      <p>A few thousand particles stand in for 40 000 stars. Time is scaled by the half-mass relaxation time, so relaxation and stellar evolution keep their real ratio. The Galactic tide is a circular orbit in a flat 220 km/s rotation curve, scaled to keep r<sub>t</sub>/r<sub>h</sub>. Neutron stars always leave on natal kicks.</p>
+      <p>A few thousand particles stand in for 40 000 stars. Time is scaled by the half-mass relaxation time, so relaxation and stellar evolution keep their real ratio. That leaves the crossing time about 10× too slow, so the supernova era passes in about one crossing time instead of ten. <i>Early clock</i> runs the start at the real crossing time instead; relaxation then runs too fast until the switch. The Galactic tide is a circular orbit in a flat 220 km/s rotation curve, scaled to keep r<sub>t</sub>/r<sub>h</sub>. Neutron stars always leave on natal kicks.</p>
     </section>
   </aside>
 </main>

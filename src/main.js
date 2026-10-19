@@ -92,6 +92,11 @@ function updateLabels() {
   $('rg').value = p.rgKpc;
   $('n').value = String(p.n);
   $('bh').checked = p.retainBH;
+  $('early').value = String(p.earlyMyr);
+  const info = state.runs[0]?.sim;
+  $('early-note').textContent = info
+    ? `1 time unit = ${info.myrPerUnitFast.toFixed(2)} Myr early, ${info.myrPerUnit.toFixed(1)} Myr after`
+    : '';
   $('twin').checked = state.twin;
 }
 
@@ -115,6 +120,7 @@ $('env-iso').addEventListener('click', () => setParams({ tidal: false }));
 $('env-orbit').addEventListener('click', () => setParams({ tidal: true }));
 $('n').addEventListener('change', (e) => setParams({ n: +e.target.value }));
 $('bh').addEventListener('change', (e) => setParams({ retainBH: e.target.checked }));
+$('early').addEventListener('change', (e) => setParams({ earlyMyr: +e.target.value }));
 $('twin').addEventListener('change', (e) => { state.twin = e.target.checked; restart(); });
 $('seed').addEventListener('click', () => setParams({ seed: (Math.random() * 1e9) | 0 }));
 $('restart').addEventListener('click', restart);

@@ -50,6 +50,11 @@ stellar evolution in their real proportion, which is what sets mass
 segregation. The Coulomb logarithm of the softened simulation uses
 ln(min(0.11 N, r_h/ε)). The tidal field is scaled to preserve r_t/r_h.
 
+The *Early clock* setting runs the first 25, 50 or 100 Myr at the physical
+Hénon time unit, √(r³/GM) ≈ 0.7–0.9 Myr, instead, and then switches to
+relaxation scaling. During that stage the supernova era spans its real number
+of crossing times, but relaxation runs too fast relative to stellar evolution.
+
 The costs of the scaling:
 
 - A cluster's crossing time is compressed relative to its relaxation time,
@@ -81,6 +86,26 @@ shows up in P2 rather than P1. P1 is consistent with no change. The likely
 causes are the small N and the compressed early mass loss. The turnoff-mass
 gap is also smaller than in the paper: 0.05 M☉ at ΔY = 0.08, against 0.15 M☉,
 because the lifetime fit here is steeper in mass than SSE's.
+
+#### With the two-stage clock
+
+The same 8 seeds with *Early clock* at 50 Myr:
+
+| t (Gyr) | whole cluster | P1 | P2 |
+|---|---|---|---|
+| 2 | 0.968 ± 0.012 | 0.980 ± 0.027 | 0.954 ± 0.017 |
+| 6 | 0.974 ± 0.012 | 0.959 ± 0.029 | 0.984 ± 0.015 |
+| 10 | 0.965 ± 0.017 | 0.947 ± 0.024 | 0.976 ± 0.021 |
+| 12 | 0.940 ± 0.022 | 0.917 ± 0.039 | 0.958 ± 0.024 |
+
+With the supernova era at its real crossing time, the whole cluster is
+smaller at every time, and from about 6 Gyr on P1 shows the larger difference.
+That ordering matches the paper. The early stage has its own cost, though.
+At N = 1000 the 50 Myr real-time stage covers 2.6 relaxation times, against
+0.13 in a real cluster. The massive stars therefore segregate before they
+explode, and the cluster expands much more: r_h reaches about 16 pc at
+12 Gyr, against about 11 pc without the early stage. At N = 2000 the stage
+covers 1.15 t_rh. A shorter stage or a larger N reduces this.
 
 ### Differences from the paper
 
